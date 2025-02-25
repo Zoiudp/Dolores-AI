@@ -1,0 +1,14 @@
+accelerate
+Flask
+Flask-Cors
+GitPython
+openai
+ray
+requests
+tqdm
+huggingface-hub
+transformers
+ipython
+ollama
+werkzeug
+edge-tts

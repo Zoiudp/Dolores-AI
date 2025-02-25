@@ -1,0 +1,46 @@
+
+# Ignore database files
+*.db
+
+# Ignore Visual Studio files
+*.vs
+*.vscode
+
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore environment files
+.env
+*.env
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore build directories
+build/
+dist/
+
+# Ignore uploads directory
+uploads/
+
+# Ignore SSL certificates
+*cert.pem
+*key.pem
+
+# Ignore log files
+*.log
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore llama3.2
+*llama3.2-1B-Instruct/*
+
+#ignore processor
+*processor/*
+
+# Ignore whisper model cache
+*.pt

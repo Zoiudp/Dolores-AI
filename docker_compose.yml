@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+    networks:
+      - app-network
+    environment:
+      - FLASK_ENV=development
+    deploy:
+      resources:
+        limits:
+          memory: "14g"  # Limite máximo de 14GB de RAM
+        reservations:
+          memory: "4g"  # Reserva mínima de 4GB
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./front_end/audio-visualizer
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./front_end/audio-visualizer:/app
+    networks:
+      - app-network
+
+  ollama:
+    image: ollama/ollama:latest  # Replace with the correct image name and tag
+    container_name: ollama-server
+    ports:
+      - "11434:11434"
+    command: >
+      serve &
+      pull moondream/llama:7B &
+      run moondream
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - app-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  ollama_data:
+
+networks:
+  app-network:
+    driver: bridge
