@@ -11,6 +11,10 @@ Trabalho de Conclusão de Curso que implementa uma assistente virtual baseada em
 1. Clone o repositório:
     ```bash
     git clone https://github.com/seu-usuario/Dolores-AI.git
+    ```
+
+    1.1 Caminhe até o diretório do projeto:
+    ```bash
     cd Dolores-AI
     ```
 
