@@ -20,15 +20,15 @@ Trabalho de Conclusão de Curso que implementa uma assistente virtual baseada em
     ```
 
 3. Configure o modelo Whisper:
-    ```bash
-   Acesse o container do backend:
     
+   3.1 Acesse o container do backend:
+    ```bash
     docker exec -it dolores-backend bash
-
-    Execute o script de inicialização:
-
+    ```
+    3.2 Execute o script de inicialização:
+    ```bash
     python init.py
-
+    ```
 ## Usando a Aplicação
 4. Após a configuração, acesse a interface web através do navegador:
     ```bash
