@@ -4,7 +4,7 @@ from utils import remove_special_characters
 from ollama import Client
 import base64
 
-def query_ollama_with_memory(user_message, image_path, model="llava:7B"):
+def query_ollama_with_memory(user_message, image_path, model="llama3.2"):
     
     # history = retrieve_history()
     # context = "\n".join([f"Usuário: {msg[0]}\nBot: {msg[1]}" for msg in history])
@@ -45,5 +45,5 @@ def query_ollama_with_memory(user_message, image_path, model="llava:7B"):
     return response['message']['content']
 
 #Example usage
-response = query_ollama_with_memory("Olá, tudo bem?", r"uploads\image_file.png")
+#response = query_ollama_with_memory("Olá, tudo bem?", r"uploads\image_file.png")
 

@@ -24,6 +24,10 @@ RUN pip install -U openai-whisper
 RUN apt-get update && apt-get install -y git
 RUN pip install --no-cache-dir --upgrade torch torchvision torchaudio
 
+# Gera certificados SSL autoassinados
+RUN openssl genrsa -out localhost-key.pem 2048 && \
+    openssl req -new -x509 -key localhost-key.pem -out localhost.pem -days 365 -subj "/CN=localhost"
+
 # Make port 5001 available to the world outside this container
 EXPOSE 5000
 
@@ -31,4 +35,4 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 
 # Run app.py when the container launches
-CMD ["python", "app.py"]
+CMD ["python", "-u", "app.py"]

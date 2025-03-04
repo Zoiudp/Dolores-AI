@@ -199,8 +199,8 @@ const AudioImageUploader = () => {
 
     try {
 
-      const endpoint = 'http://localhost:5000/audio_image';
-      const baseUrl = 'http://localhost:5000';
+      const endpoint = 'https://192.168.1.8:5000/audio_image';
+      const baseUrl = 'https://192.168.1.8:5000';
       const response = await axios.post(endpoint, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });

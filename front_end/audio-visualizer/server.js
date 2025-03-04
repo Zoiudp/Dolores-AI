@@ -1,3 +1,5 @@
+const https = require('https');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -11,6 +13,12 @@ app.use(express.json());
 // Enable CORS for all routes
 app.use(cors());
 
+// Carrega o certificado e a chave
+const options = {
+  key: fs.readFileSync('front_end\\audio-visualizer\\key.pem'),
+  cert: fs.readFileSync('front_end\\audio-visualizer\\cert.pem')
+};
+
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'build')));
 
@@ -21,7 +29,7 @@ app.post('/audio_image', async (req, res) => {
     formData.append('audio', req.files.audio);
     formData.append('image', req.files.image);
 
-    const response = await axios.post('http://localhost:5000/audio_image', formData, {
+    const response = await axios.post('https://192.168.1.8:5000/audio_image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
@@ -37,7 +45,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+// Cria o servidor HTTPS
+https.createServer(options, app).listen(3000, () => {
+  console.log('✅ Servidor rodando em https://localhost:3000');
 });

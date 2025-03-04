@@ -8,7 +8,6 @@ from ray import get
 import requests
 from Inference import query_ollama_with_memory
 from utils import text_to_speech
-from BD_memory_utils import init_db, is_initialized
 from accelerate import Accelerator
 import os
 import tempfile
@@ -18,8 +17,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import torch
 from AudioTranscriber import AudioTranscriber
 import ssl
-import whisper
-import ollama
 
 accelerator = Accelerator()
 app = Flask(__name__)
@@ -52,16 +49,6 @@ def get_audio(filename):
         return send_file(audio_path, as_attachment=True)
     except FileNotFoundError:
         return jsonify({'message': 'File not found'}), 404
-    
-def init():
-    if not is_initialized():
-        init_db()
-    
-
-    model_size = 'turbo'
-    model = whisper.load_model(model_size, download_root='~/.cache/whisper')
-    
-    return print('Iniciado com sucesso')
 
 
 @app.route('/audio_image', methods=['POST'])	
@@ -140,7 +127,7 @@ def process_data():
     return jsonify({
         'message': inference_response,
         'sentiment': 'positive',
-        'audio_source': "http://127.0.0.1:5001/model_output/output.mp3",
+        'audio_source': "http://192.168.1.8:5000/model_output/output.mp3",
         'tempo de execução': exec_time
     }), 200
 
@@ -157,8 +144,6 @@ def set_listening_state():
 
 
 if __name__ == '__main__':
-    # Ensure you have the SSL certificate and key files
-    # cert_file = r'backend\cert.pem'
-    # key_file = r'backend\key.pem'
-    #init()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    cert_file = 'localhost.pem'
+    key_file = 'localhost-key.pem'
+    app.run(host="0.0.0.0", port=5000, ssl_context=(cert_file, key_file))
