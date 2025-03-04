@@ -9,24 +9,29 @@ Trabalho de Conclusão de Curso que implementa uma assistente virtual baseada em
 ## Instalação e Configuração
 
 1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/Dolores-AI.git
-   cd Dolores-AI
+    ```bash
+    git clone https://github.com/seu-usuario/Dolores-AI.git
+    cd Dolores-AI
+    ```
 
-## Inicie os containers com Docker Compose:
+2. Inicie os containers com Docker Compose:
+    ```bash
+    docker compose up -d
+    ```
 
-docker compose up -d
+3. Configure o modelo Whisper:
+    ```bash
+   Acesse o container do backend:
+    
+    docker exec -it dolores-backend bash
 
-## Configure o modelo Whisper:
+    Execute o script de inicialização:
 
-Acesse o container do backend:
-docker exec -it dolores-backend bash
-
-Execute o script de inicialização:
-python init.py
+    python init.py
 
 ## Usando a Aplicação
-Após a configuração, acesse a interface web através do navegador:
+4. Após a configuração, acesse a interface web através do navegador:
+    ```bash
     https://192.168.X.X:3000
 
 ## Observações
