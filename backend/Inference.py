@@ -4,7 +4,7 @@ from utils import remove_special_characters
 from ollama import Client
 import base64
 
-def query_ollama_with_memory(user_message, image_path, model="llama3.2"):
+def query_ollama_with_memory(user_message, image_path, model="moondream:1.8b"):
     
     # history = retrieve_history()
     # context = "\n".join([f"Usuário: {msg[0]}\nBot: {msg[1]}" for msg in history])
@@ -23,7 +23,7 @@ def query_ollama_with_memory(user_message, image_path, model="llama3.2"):
     with open(image_path, 'rb') as f:
         image_data = base64.b64encode(f.read()).decode('utf-8')
     
-    client = Client(host='http://ollama-server:11434')
+    client = Client(host='http://192.168.1.9:11434')
     response = client.chat(
         model=model,
         messages=[
@@ -45,5 +45,7 @@ def query_ollama_with_memory(user_message, image_path, model="llama3.2"):
     return response['message']['content']
 
 #Example usage
-#response = query_ollama_with_memory("Olá, tudo bem?", r"uploads\image_file.png")
+#response = query_ollama_with_memory("Olá, tudo bem?", r"Dolores-AI\uploads\image_file.png")
+
+
 

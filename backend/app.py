@@ -17,6 +17,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import torch
 from AudioTranscriber import AudioTranscriber
 import ssl
+import socket
+#from sentimentanalysis import analyze_sentiment
 
 accelerator = Accelerator()
 app = Flask(__name__)
@@ -103,6 +105,9 @@ def process_data():
         print('gerando inferencia...')
         inference_future = executor.submit(query_ollama_with_memory, transcription, image_path)
         # analise de sentimento
+        #sentiment_future = executor.submit(analyze_sentiment, transcription)
+        #sentiment = sentiment_future.result()
+        #print('análise de sentimento concluída')
 
         inference_response = inference_future.result()
         
@@ -126,8 +131,8 @@ def process_data():
 
     return jsonify({
         'message': inference_response,
-        'sentiment': 'positive',
-        'audio_source': "http://192.168.1.8:5000/model_output/output.mp3",
+        #'sentiment': sentiment,
+        'audio_source': f"https://192.158.1.5:5000/model_output/output.mp3",
         'tempo de execução': exec_time
     }), 200
 

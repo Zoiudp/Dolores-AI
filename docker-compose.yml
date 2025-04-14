@@ -42,7 +42,7 @@ services:
       - "11434:11434"
     command: >
       serve &
-      pull moondream/llama:7B &
+      pull moondream &
       run moondream
     volumes:
       - ollama_data:/root/.ollama

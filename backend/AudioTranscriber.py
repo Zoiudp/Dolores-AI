@@ -1,6 +1,8 @@
 # import pyaudio
+from re import A
 import numpy as np
 # import wave
+from openai import audio
 import torch
 import whisper
 import time
@@ -12,7 +14,7 @@ CHUNK = 1024  # Set maximum duration to 30 seconds for the countdown
 SILENCE_LIMIT = 60  # Number of consecutive silent chunks to stop recording
 
 class AudioTranscriber:
-    def __init__(self, accelerator, rate=RATE, channels=CHANNELS, chunk=CHUNK, model_size='turbo'):
+    def __init__(self, accelerator, rate=RATE, channels=CHANNELS, chunk=CHUNK, model_size='medium'):
         self.rate = rate
         self.channels = channels
         self.chunk = chunk
@@ -34,3 +36,26 @@ class AudioTranscriber:
 
     # def close(self):
     #     self.p.terminate()
+
+# from accelerate import Accelerator
+# # Initialize the accelerator
+# accelerator = Accelerator()
+# # Initialize the AudioTranscriber with the accelerator
+
+# audio_transcriber = AudioTranscriber(accelerator=accelerator)  # Replace with your accelerator if needed
+# # Example usage 
+
+# audio_file = r"uploads\audio_file.wav"  # Replace with your audio file path
+
+# # Start timing
+# start_time = time.time()
+
+# result = audio_transcriber.transcribe_audio(audio_file)
+
+# # End timing and calculate elapsed time
+# end_time = time.time()
+# elapsed_time = end_time - start_time
+
+# print(f"Transcription result: {result}")
+# print(f"Time taken for transcription: {elapsed_time:.2f} seconds")
+

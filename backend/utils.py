@@ -50,7 +50,7 @@ def text_to_speech(text):
 
 
 # Gera e toca o áudio
-#text_to_speech(inference)
+#text_to_speech('Olá, tudo bem?')
 
 # Função para remover caracteres especiais
 def remove_special_characters(text):
