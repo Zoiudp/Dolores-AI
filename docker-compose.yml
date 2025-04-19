@@ -42,8 +42,8 @@ services:
       - "11434:11434"
     command: >
       serve &
-      pull moondream &
-      run moondream
+      pull gemma3:4b &
+      run gemma3:4b
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped

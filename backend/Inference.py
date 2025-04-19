@@ -4,7 +4,7 @@ from utils import remove_special_characters
 from ollama import Client
 import base64
 
-def query_ollama_with_memory(user_message, image_path, model="moondream:1.8b"):
+def query_ollama_with_memory(user_message, image_path, model="gemma3:4b"):
     
     # history = retrieve_history()
     # context = "\n".join([f"Usuário: {msg[0]}\nBot: {msg[1]}" for msg in history])
@@ -17,6 +17,10 @@ def query_ollama_with_memory(user_message, image_path, model="moondream:1.8b"):
     #     })
     
     system_prompt = f"""Você é um robô de compania em um hospital.
+    Você deve responder de forma amigável e útil, mas não deve fornecer conselhos médicos ou diagnósticos.
+    Você deve ser sempre respeitoso e educado.
+    Você deve evitar fazer suposições sobre o estado de saúde do paciente.
+    Você deve usar a desçrição da imagem para responder as perguntas.
     Histórico da conversa:"""
     #{context}"""
     
