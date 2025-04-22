@@ -23,7 +23,7 @@ def query_ollama_with_memory(user_message, image_path, model="moondream:1.8b"):
     with open(image_path, 'rb') as f:
         image_data = base64.b64encode(f.read()).decode('utf-8')
     
-    client = Client(host='http://192.168.1.9:11434')
+    client = Client(host='http://192.168.0.172:11434')
     response = client.chat(
         model=model,
         messages=[

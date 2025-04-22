@@ -24,7 +24,7 @@ const CONFIG = {
     resetDelayAfterPlayback: 1000    // Delay before reset after playback
   },
   api: {
-    baseUrl: 'https://192.168.1.9:5000',
+    baseUrl: 'https://192.168.0.172:5000',
     audioImageEndpoint: '/audio_image',
     audioOutputPath: '/model_output/output.mp3'
   }

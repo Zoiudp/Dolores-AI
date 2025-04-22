@@ -41,4 +41,4 @@ COPY start.sh /backend/start.sh
 RUN chmod +x /backend/start.sh
 
 # Run init.py once and then start the app
-CMD ["/backend/start.sh"]
+CMD ["python", "-u", "app.py"]
