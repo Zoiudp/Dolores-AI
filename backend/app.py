@@ -18,6 +18,8 @@ import torch
 from AudioTranscriber import AudioTranscriber
 import ssl
 import socket
+import shutil
+from MemoryBank import MemoryBank
 #from sentimentanalysis import analyze_sentiment
 
 accelerator = Accelerator()
@@ -28,21 +30,6 @@ app.debug = True
 executor = ThreadPoolExecutor(max_workers=20)
 # Global variable to track the listening state
 is_listening = True
-
-# Function to check initial listening state from frontend
-# def check_initial_listening_state():
-#     global is_listening
-#     try:
-#         # Make request to frontend (assuming it's running on port 3000)
-#         response = requests.get('http://localhost:3000/api/listening-state')
-#         if response.status_code == 200:
-#             is_listening = response.json().get('isListening', True)
-#     except:
-#         # If frontend is not available, keep default value
-#         pass
-
-# # Check listening state when app starts
-# check_initial_listening_state()
 
 @app.route('/model_output/<filename>', methods=['GET'])
 def get_audio(filename):
@@ -66,11 +53,9 @@ def process_data():
     if audio_file.filename == '' or image_file.filename == '':
         return jsonify({'message': 'No selected file'}), 400
 
-    if not os.path.exists('uploads'):
-        os.makedirs('uploads')
-
-    audio_path = os.path.join('uploads', 'audio_file.wav')
-    image_path = os.path.join('uploads', 'image_file.png')
+    temp_dir = tempfile.mkdtemp()
+    audio_path = os.path.join(temp_dir, 'audio_file.wav')
+    image_path = os.path.join(temp_dir, 'image_file.png')
 
     if audio_file and image_file:
         audio_file.save(audio_path)
@@ -98,12 +83,16 @@ def process_data():
         print('transcrição concluída')
         print(transcription)
         
+        # Ensure transcription is a string
+        if not isinstance(transcription, str):
+            transcription = str(transcription)
+        
         torch.cuda.empty_cache()
         gc.collect()
         torch.cuda.reset_max_memory_allocated()
 
         print('gerando inferencia...')
-        inference_future = executor.submit(query_ollama_with_memory, transcription, image_path)
+        inference_future = executor.submit(query_ollama_with_memory, transcription, image_path, memory_bank, user_id="patient_default", model="gemma3:4b")
         # analise de sentimento
         #sentiment_future = executor.submit(analyze_sentiment, transcription)
         #sentiment = sentiment_future.result()
@@ -123,11 +112,19 @@ def process_data():
         gc.collect()
         torch.cuda.reset_max_memory_allocated()
 
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
     end_time = time.time()
     exec_time = end_time - start_time
+
+    print(f"Tempo de execução: {exec_time:.2f} segundos")
+    print("Requisição processada com sucesso")
+    # Clean up temporary files
+    shutil.rmtree(temp_dir)
+    # Return the response
+
 
     return jsonify({
         'message': inference_response,
@@ -146,6 +143,20 @@ def set_listening_state():
         return jsonify({'message': f'Listening state set to {is_listening}'}), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 400
+
+##Function to get the current user portrait
+def get_user_portrait():
+    """Endpoint to get the current user portrait"""
+    portrait = memory_bank.generate_user_portrait()
+    return jsonify({"portrait": portrait})
+
+##Function to get the current user memory
+@app.route('/memories', methods=['GET'])
+def get_memories():
+    """Get recent memories"""
+    query = request.args.get('query', '')
+    results = memory_bank.retrieve_memories(query_text=query, n_results=10)
+    return jsonify({"memories": results})
 
 
 if __name__ == '__main__':
