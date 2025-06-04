@@ -6,7 +6,7 @@ from git import Tree
 from openai import audio
 from ray import get
 import requests
-from Inference import query_ollama_with_memory
+from Inference import analyze_with_dual_response
 from utils import text_to_speech
 from accelerate import Accelerator
 import os
@@ -30,6 +30,12 @@ app.debug = True
 executor = ThreadPoolExecutor(max_workers=20)
 # Global variable to track the listening state
 is_listening = True
+
+# Initialize memory bank
+memory_bank = MemoryBank(
+        persist_directory="./dual_response_memory_storage",
+        forgetting_enabled=True
+)
 
 @app.route('/model_output/<filename>', methods=['GET'])
 def get_audio(filename):
@@ -92,7 +98,7 @@ def process_data():
         torch.cuda.reset_max_memory_allocated()
 
         print('gerando inferencia...')
-        inference_future = executor.submit(query_ollama_with_memory, transcription, image_path, memory_bank, user_id="patient_default", model="gemma3:4b")
+        inference_future = executor.submit(analyze_with_dual_response, image_path, transcription, user_id='User 1', memory_bank=memory_bank)
         # analise de sentimento
         #sentiment_future = executor.submit(analyze_sentiment, transcription)
         #sentiment = sentiment_future.result()

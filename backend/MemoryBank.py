@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Union
 import torch
 from PIL import Image
-from transformers import CLIPProcessor, CLIPModel
+from transformers.models.clip import CLIPProcessor
+from transformers.models.clip import CLIPModel
 import math
 
 class MemoryBank:
@@ -50,10 +51,25 @@ class MemoryBank:
             metadata={"hnsw:space": "cosine"}
         )
         
-        self.images_collection = self.client.get_or_create_collection(
-            name="emotional_images",
-            metadata={"hnsw:space": "cosine"}
-        )
+        # For images collection, we need to ensure consistent embedding dimensions
+        try:
+            # Try to get existing collection
+            self.images_collection = self.client.get_collection(
+                name="emotional_images"
+            )
+            
+            # Store the embedding dimension for validation
+            self.image_embedding_dim = 512  # Default for CLIP vit-base-patch32
+            
+        except ValueError:  # Collection doesn't exist yet
+            # Create new collection
+            self.images_collection = self.client.create_collection(
+                name="emotional_images",
+                metadata={"hnsw:space": "cosine"}
+            )
+            
+            # Set embedding dimension
+            self.image_embedding_dim = 512  # Default for CLIP vit-base-patch32
         
         self.summaries_collection = self.client.get_or_create_collection(
             name="event_summaries",
@@ -82,7 +98,19 @@ class MemoryBank:
             image_features = self.clip_model.get_image_features(**inputs)
             # Normalize embedding
             image_embedding = image_features / image_features.norm(dim=1, keepdim=True)
-            return image_embedding.squeeze().numpy().tolist()
+            
+            # Get the embedding as a list and ensure correct dimension
+            embedding = image_embedding.squeeze().numpy().tolist()
+            
+            # Ensure embedding has correct dimension (pad or truncate if needed)
+            if len(embedding) < self.image_embedding_dim:
+                # Pad with zeros
+                embedding = embedding + [0.0] * (self.image_embedding_dim - len(embedding))
+            elif len(embedding) > self.image_embedding_dim:
+                # Truncate
+                embedding = embedding[:self.image_embedding_dim]
+                
+            return embedding
     
     def _calculate_memory_score(self, last_access_time, memory_strength):
         """
@@ -403,58 +431,87 @@ class MemoryBank:
         Returns:
             List of relevant images with memory scores
         """
-        if query_image:
-            # Use image embedding for query
-            query_embedding = self._get_clip_embedding(query_image)
-            results = self.images_collection.query(
-                query_embeddings=[query_embedding],
-                n_results=n_results * 2,
-                where={"user_id": user_id}
-            )
-            # For query results, we need to handle nested lists
-            if results["ids"] and len(results["ids"]) > 0:
-                ids = results["ids"][0]
-                documents = results["documents"][0]
-                metadatas = results["metadatas"][0]
-            else:
-                return []
-        elif query_text:
-            # Use text for query
-            results = self.images_collection.query(
-                query_texts=[query_text],
-                n_results=n_results * 2,
-                where={"user_id": user_id}
-            )
-            # For query results, we need to handle nested lists
-            if results["ids"] and len(results["ids"]) > 0:
-                ids = results["ids"][0]
-                documents = results["documents"][0]
-                metadatas = results["metadatas"][0]
-            else:
-                return []
-        else:
-            # Get recent images
-            results = self.images_collection.get(
-                where={"user_id": user_id},
-                limit=n_results * 2
-            )
-            
-            if not results["ids"]:
-                return []
+        try:
+            if query_image:
+                # Use image embedding for query
+                query_embedding = self._get_clip_embedding(query_image)
+                results = self.images_collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=n_results * 2,
+                    where={"user_id": user_id}
+                )
                 
-            # For get results, the lists are not nested
-            ids = results["ids"]
-            documents = results["documents"]
-            metadatas = results["metadatas"]
-            
-            # Sort by timestamp
-            items = list(zip(ids, documents, metadatas))
-            items.sort(key=lambda x: x[2]["timestamp"], reverse=True)
-            
-            # Unpack sorted items
-            ids = [item[0] for item in items[:n_results * 2]]
-            documents = [item[1] for item in items[:n_results * 2]]
-            metadatas = [item[2] for item in items[:n_results * 2]]
+                # For query results, we need to handle nested lists
+                if results["ids"] and len(results["ids"]) > 0:
+                    ids = results["ids"][0]
+                    documents = results["documents"][0]
+                    metadatas = results["metadatas"][0]
+                else:
+                    return []
+                    
+            elif query_text:
+                # For text-based queries, we need a different approach since the image collection
+                # does not have a text embedding function
+                
+                # Option 1: Use direct document match (basic filtering)
+                results = self.images_collection.get(
+                    where={"user_id": user_id}
+                )
+                
+                if not results["ids"]:
+                    return []
+                
+                # Filter based on text similarity to emotion_description
+                filtered_items = []
+                for i, doc in enumerate(results["documents"]):
+                    # Simple text matching - can be improved with better text matching
+                    if query_text.lower() in doc.lower():
+                        filtered_items.append((
+                            results["ids"][i],
+                            results["documents"][i],
+                            results["metadatas"][i]
+                        ))
+                
+                # Sort by timestamp (recent first) if we have matches
+                if filtered_items:
+                    filtered_items.sort(key=lambda x: x[2]["timestamp"], reverse=True)
+                    ids = [item[0] for item in filtered_items[:n_results * 2]]
+                    documents = [item[1] for item in filtered_items[:n_results * 2]]
+                    metadatas = [item[2] for item in filtered_items[:n_results * 2]]
+                else:
+                    # Fall back to most recent if no matches
+                    items = list(zip(results["ids"], results["documents"], results["metadatas"]))
+                    items.sort(key=lambda x: x[2]["timestamp"], reverse=True)
+                    ids = [item[0] for item in items[:n_results * 2]]
+                    documents = [item[1] for item in items[:n_results * 2]]
+                    metadatas = [item[2] for item in items[:n_results * 2]]
+            else:
+                # Get recent images
+                results = self.images_collection.get(
+                    where={"user_id": user_id},
+                    limit=n_results * 2
+                )
+                
+                if not results["ids"]:
+                    return []
+                    
+                # For get results, the lists are not nested
+                ids = results["ids"]
+                documents = results["documents"]
+                metadatas = results["metadatas"]
+                
+                # Sort by timestamp
+                items = list(zip(ids, documents, metadatas))
+                items.sort(key=lambda x: x[2]["timestamp"], reverse=True)
+                
+                # Unpack sorted items
+                ids = [item[0] for item in items[:n_results * 2]]
+                documents = [item[1] for item in items[:n_results * 2]]
+                metadatas = [item[2] for item in items[:n_results * 2]]
+        
+        except Exception as e:
+            print(f"Error retrieving emotional images: {e}")
+            return []
         
         retrieved_items = []
         
@@ -692,11 +749,15 @@ class MemoryBank:
         ])
         
         # Get emotional images context
-        emotional_imgs = self.retrieve_emotional_images(user_id, user_input)
-        img_text = "\n".join([
-            f"[Emotional state from {datetime.fromtimestamp(img['metadata']['timestamp']).strftime('%Y-%m-%d %H:%M')}]\n{img['description']}"
-            for img in emotional_imgs
-        ])
+        try:
+            emotional_imgs = self.retrieve_emotional_images(user_id, user_input)
+            img_text = "\n".join([
+                f"[Emotional state from {datetime.fromtimestamp(img['metadata']['timestamp']).strftime('%Y-%m-%d %H:%M')}]\n{img['description']}"
+                for img in emotional_imgs
+            ])
+        except Exception as e:
+            print(f"Error retrieving emotional images for prompt context: {e}")
+            img_text = ""
         
         # Get event summaries
         summaries = self.retrieve_event_summaries(user_id, user_input)
@@ -722,6 +783,47 @@ class MemoryBank:
             "event_summaries": summary_text if summary_text else "No event summaries available.",
             "user_input": user_input
         }
+
+def load_existing_memory(
+    persist_directory: str,
+    text_model_name: str = "all-MiniLM-L6-v2",
+    clip_model_name: str = "openai/clip-vit-base-patch32",
+    forgetting_enabled: bool = True
+) -> MemoryBank:
+    """
+    Load an existing memory storage from disk.
+    
+    Args:
+        persist_directory: Path to the existing memory storage directory
+        text_model_name: Name of the text embedding model to use
+        clip_model_name: Name of the CLIP model for image embeddings
+        forgetting_enabled: Whether to enable the Ebbinghaus forgetting curve
+        
+    Returns:
+        A MemoryBank instance with the loaded memory
+        
+    Raises:
+        ValueError: If the directory doesn't exist or doesn't contain valid memory data
+    """
+    # Check if directory exists
+    if not os.path.exists(persist_directory):
+        raise ValueError(f"Memory storage directory '{persist_directory}' not found")
+    
+    # Check if it contains valid ChromaDB data
+    if not os.path.exists(os.path.join(persist_directory, "chroma.sqlite3")):
+        raise ValueError(f"Directory '{persist_directory}' doesn't contain valid ChromaDB data")
+    
+    # Initialize a new memory bank with the existing directory
+    memory_bank = MemoryBank(
+        persist_directory=persist_directory,
+        text_model_name=text_model_name,
+        clip_model_name=clip_model_name,
+        forgetting_enabled=forgetting_enabled
+    )
+    
+    print(f"Successfully loaded memory from '{persist_directory}'")
+    return memory_bank
+
 
 
 # Example usage
