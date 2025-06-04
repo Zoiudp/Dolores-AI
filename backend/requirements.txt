@@ -15,3 +15,4 @@ gunicorn
 chromadb
 pillow
 torch
+crewai
