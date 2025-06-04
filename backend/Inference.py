@@ -588,6 +588,3 @@ if __name__ == "__main__":
     
     print(f"\n✅ Dual response analysis saved to '{filename}'")
     print("\n🎯 SUMMARY: The system now provides both direct answers and contextual visual analysis!")
-
-
-    
