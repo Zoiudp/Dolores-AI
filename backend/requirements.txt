@@ -2,7 +2,6 @@ accelerate
 Flask
 Flask-Cors
 GitPython
-openai
 ray
 requests
 tqdm
@@ -13,3 +12,7 @@ ollama
 werkzeug
 edge-tts
 gunicorn
+chromadb
+pillow
+torch
+crewai
